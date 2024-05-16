@@ -67,4 +67,7 @@ public class RegistrationCompleteEventListener implements ApplicationListener<Re
         messageHelper.setText(mailContent, true);
         mailSender.send(message);
     }
+
+    public void sendPasswordResetVerificationEmail(String url) {
+    }
 }

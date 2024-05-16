@@ -2,6 +2,7 @@ package com.hafidtech.springemailverification.user;
 
 import com.hafidtech.springemailverification.exception.UserAlreadyExistsException;
 import com.hafidtech.springemailverification.registration.RegistrationRequest;
+import com.hafidtech.springemailverification.registration.password.PasswordResetTokenService;
 import com.hafidtech.springemailverification.registration.token.VerificationToken;
 import com.hafidtech.springemailverification.registration.token.VerificationTokenRepository;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +27,9 @@ public class UserService implements IUserService {
 
     @Autowired
     private final VerificationTokenRepository tokenRepository;
+
+    @Autowired
+    private PasswordResetTokenService passwordResetTokenService;
 
     @Override
     public List<User> getUsers() {
@@ -86,5 +90,21 @@ public class UserService implements IUserService {
         verificationToken.setToken(UUID.randomUUID().toString());
         verificationToken.setExpirationTime(tokenExpirationTime.getTokenExpirationTime());
         return tokenRepository.save(verificationToken);
+    }
+
+
+    @Override
+    public void createPasswordResetTokenForUser(User user, String passwordToken) {
+        passwordResetTokenService.createPasswordResetTokenForUser(user, passwordToken);
+    }
+
+    @Override
+    public String validatePasswordResetToken(String passwordResetToken) {
+        return passwordResetTokenService.validatePasswordResetToken(passwordResetToken);
+    }
+
+    @Override
+    public User findUserByPasswordToken(String passwordResetToken) {
+        return passwordResetTokenService.findUserByPasswordToken(passwordResetToken).get();
     }
 }

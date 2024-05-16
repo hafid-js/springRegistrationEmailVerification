@@ -2,6 +2,8 @@ package com.hafidtech.springemailverification.registration;
 
 import com.hafidtech.springemailverification.event.RegistrationCompleteEvent;
 import com.hafidtech.springemailverification.event.listener.RegistrationCompleteEventListener;
+import com.hafidtech.springemailverification.registration.password.PasswordResetRequest;
+import com.hafidtech.springemailverification.registration.password.PasswordResetToken;
 import com.hafidtech.springemailverification.registration.token.VerificationToken;
 import com.hafidtech.springemailverification.registration.token.VerificationTokenRepository;
 import com.hafidtech.springemailverification.user.User;
@@ -15,6 +17,8 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.UnsupportedEncodingException;
+import java.util.Optional;
+import java.util.UUID;
 
 @Slf4j
 @RestController
@@ -72,6 +76,43 @@ public class RegistrationController {
     eventListener.sendVerificationEmail(url);
     log.info("Click the link to verify your registration : {}", url);
     }
+
+
+
+    @PostMapping("/password-reset-request")
+    public String resetPasswordRequest(@RequestBody PasswordResetRequest passwordResetRequest,
+                                       final HttpServletRequest request) {
+        Optional<User> user = userService.findByEmail(passwordResetRequest.getEmail());
+        String passwordResetUrl = "";
+        if (user.isPresent()) {
+            String passwordResetToken = UUID.randomUUID().toString();
+            userService.createPasswordResetTokenForUser(user.get(), passwordResetToken);
+            passwordResetUrl = passwordResetEmailLink(user.get(), applicationUrl(request), passwordResetToken);
+        }
+        
+        return passwordResetUrl;
+    }
+
+    private String passwordResetEmailLink(User user, String applicationUrl, String passwordResetToken) {
+        String url = applicationUrl+"/register/reset-password?token="+passwordResetToken;
+        eventListener.sendPasswordResetVerificationEmail(url);
+        log.info("Click the link to reset your password : {}", url);
+        return url;
+    }
+
+    public String resetPassword(@RequestBody PasswordResetRequest passwordResetRequest,
+                                @RequestParam("token") String passwordResetToken) {
+        String tokenValidationResult = userService.validatePasswordResetToken(passwordResetToken);
+        if (!tokenValidationResult.equalsIgnoreCase("valid")) {
+            return "Invalid password reset token";
+        }
+        User user = userService.findUserByPasswordToken(passwordResetToken);
+        if (user != null) {
+
+        }
+    }
+
+
 
 
     private String applicationUrl(HttpServletRequest request) {
